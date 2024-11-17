@@ -2,13 +2,25 @@ vim9script
 
 import autoload "bekken.vim" as b
 
-const keyMapping = {
-  "\<Cr>": "buffer",
-  "\<Tab>": "tab split | buffer",
-  "\<C-t>": "tab split | buffer",
-  "\<C-s>": "split | buffer",
-  "\<C-v>": "vsplit | buffer",
+const defaultKeyMappings: dict<func(number): void> = {
+  "\<Cr>": (bufnr: number) => {
+    execute("buffer " .. bufnr)
+  },
+  "\<Tab>": (bufnr: number) => {
+    execute("tab split | buffer " .. bufnr)
+  },
+  "\<C-t>": (bufnr: number) => {
+    execute("tab split | buffer " .. bufnr)
+  },
+  "\<C-s>": (bufnr: number) => {
+    execute("split | buffer " .. bufnr)
+  },
+  "\<C-v>": (bufnr: number) => {
+    execute("vsplit | buffer " .. bufnr)
+  },
 }
+
+var keyMappings: dict<func> = {}
 
 export def FilterKey(): string
   return "search"
@@ -16,6 +28,11 @@ enddef
 
 export def List(...args: list<any>): list<dict<any>>
   var includes_hidden: bool = args->len() > 0 ? !!args[0] : false
+
+  keyMappings->extend(copy(defaultKeyMappings))
+  if args->len() > 1
+    keyMappings->extend(copy(args[1]))
+  endif
 
   return copy(getbufinfo())
     ->filter((key, val) => includes_hidden ? true : val.listed)
@@ -39,11 +56,11 @@ export def Render(line: number, target: dict<any>, bekken: b.Bekken): string
 enddef
 
 export def Filter(key: string, bekken: b.Bekken): bool
-  if keyMapping->has_key(key)
+  if keyMappings->has_key(key)
     const selected = bekken.GetResource().selected
 
     if selected != null
-      execute(keyMapping[key] .. " " .. selected.buffer.bufnr)
+      keyMappings[key](selected.buffer.bufnr)
     endif
 
     bekken.Close()
