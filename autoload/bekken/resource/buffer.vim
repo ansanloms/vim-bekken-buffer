@@ -29,10 +29,7 @@ enddef
 export def List(...args: list<any>): list<dict<any>>
   var includes_hidden: bool = args->len() > 0 ? !!args[0] : false
 
-  keyMappings->extend(copy(defaultKeyMappings))
-  if args->len() > 1
-    keyMappings->extend(copy(args[1]))
-  endif
+  keyMappings->extend(copy(args->len() > 1 ? args[1] : defaultKeyMappings))
 
   return copy(getbufinfo())
     ->filter((key, val) => includes_hidden ? true : val.listed)
